@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>English Quest</title>
+<meta name="description" content="Interaktivní aplikace pro učení angličtiny podle úrovně A1–C2.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦉</text></svg>">
+<style>
+:root {
+  --bg: #f6f4ef;
+  --surface: #ffffff;
+  --surface-2: #efece4;
+  --text: #1d1b16;
+  --muted: #6b665a;
+  --border: #e2ddd0;
+  --accent: #5b4cf0;
+  --accent-soft: #e9e6ff;
+  --good: #1f9d55;
+  --good-soft: #def5e7;
+  --bad: #d93a3a;
+  --bad-soft: #fde4e4;
+  --gold: #e8a317;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.06);
+  --radius: 18px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14131a; --surface: #1e1d26; --surface-2: #282733; --text: #f1eff8; --muted: #a29fb3;
+    --border: #33313f; --accent: #8b7fff; --accent-soft: #2c2850; --good: #3ccf7f; --good-soft: #173527;
+    --bad: #ff6b6b; --bad-soft: #3d1d22; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14131a; --surface: #1e1d26; --surface-2: #282733; --text: #f1eff8; --muted: #a29fb3;
+  --border: #33313f; --accent: #8b7fff; --accent-soft: #2c2850; --good: #3ccf7f; --good-soft: #173527;
+  --bad: #ff6b6b; --bad-soft: #3d1d22; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+.wrap { max-width: 880px; margin: 0 auto; padding: 16px; }
+header.top { display: flex; align-items: center; gap: 12px; padding: 8px 0 20px; }
+.logo { font-weight: 800; font-size: 20px; display: flex; align-items: center; gap: 8px; letter-spacing: -.02em; }
+.logo span { font-size: 26px; }
+.top .spacer { flex: 1; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); font-weight: 600; font-size: 14px; white-space: nowrap; }
+.icon-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; width: 38px; height: 38px; display: grid; place-items: center; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; }
+h1 { font-size: clamp(26px, 5vw, 36px); line-height: 1.15; margin: 0 0 8px; letter-spacing: -.02em; }
+h2 { font-size: 20px; margin: 0 0 12px; }
+.muted { color: var(--muted); }
+.btn { border: 0; border-radius: 14px; padding: 12px 20px; font-weight: 700; background: var(--accent); color: #fff; transition: transform .08s, filter .15s; }
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: scale(.97); }
+.btn.ghost { background: var(--surface-2); color: var(--text); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.hidden { display: none !important; }
+
+/* Onboarding */
+.levels { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 18px 0; }
+.level-opt { text-align: left; background: var(--surface-2); border: 2px solid transparent; border-radius: 14px; padding: 12px; }
+.level-opt b { display: block; font-size: 20px; }
+.level-opt small { color: var(--muted); }
+.level-opt.sel { border-color: var(--accent); background: var(--accent-soft); }
+input[type=text] { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; }
+input[type=text]:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+/* Dashboard */
+.hero { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: center; }
+.ring { width: 110px; height: 110px; position: relative; }
+.ring svg { transform: rotate(-90deg); }
+.ring .lbl { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; font-weight: 800; font-size: 20px; line-height: 1.1; }
+.ring .lbl small { display: block; font-size: 11px; color: var(--muted); font-weight: 600; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
+.stat { background: var(--surface-2); border-radius: 14px; padding: 10px 12px; }
+.stat b { display: block; font-size: 20px; }
+.stat small { color: var(--muted); font-size: 12px; }
+.xpbar { height: 10px; background: var(--surface-2); border-radius: 99px; overflow: hidden; margin-top: 8px; }
+.xpbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), #c36cf5); border-radius: 99px; transition: width .6s; }
+.modes { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin: 18px 0; }
+.mode { text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); transition: transform .15s, border-color .15s; position: relative; }
+.mode:hover { transform: translateY(-3px); border-color: var(--accent); }
+.mode .em { font-size: 30px; }
+.mode b { display: block; font-size: 17px; margin-top: 6px; }
+.mode small { color: var(--muted); }
+.mode .tag { position: absolute; top: 14px; right: 14px; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+.section-title { display: flex; align-items: baseline; justify-content: space-between; margin-top: 26px; }
+.lvl-progress { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.lvl-progress div { background: var(--surface-2); border-radius: 12px; padding: 10px; text-align: center; font-size: 13px; }
+.lvl-progress div b { display: block; font-size: 16px; }
+.lvl-progress div.cur { outline: 2px solid var(--accent); }
+.mini { height: 6px; background: var(--border); border-radius: 9px; margin-top: 6px; overflow: hidden; }
+.mini i { display: block; height: 100%; background: var(--good); }
+.badges { display: flex; flex-wrap: wrap; gap: 10px; }
+.badge { display: flex; gap: 8px; align-items: center; padding: 8px 12px; border-radius: 12px; background: var(--surface-2); font-size: 14px; opacity: .45; filter: grayscale(1); }
+.badge.on { opacity: 1; filter: none; background: var(--accent-soft); }
+
+/* Lesson */
+.lesson-top { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.progress { flex: 1; height: 14px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--good); border-radius: 99px; transition: width .35s; }
+.combo { font-weight: 800; color: var(--gold); min-width: 60px; text-align: right; }
+.prompt { text-align: center; margin: 10px 0 24px; }
+.prompt .kind { text-transform: uppercase; letter-spacing: .08em; font-size: 12px; font-weight: 700; color: var(--muted); }
+.prompt .word { font-size: clamp(30px, 7vw, 46px); font-weight: 800; letter-spacing: -.02em; margin: 6px 0; word-break: break-word; }
+.prompt .sentence { font-size: 22px; font-weight: 600; margin: 8px 0; }
+.speak { border: 0; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 8px 14px; font-weight: 700; }
+.options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.opt { background: var(--surface); border: 2px solid var(--border); border-radius: 14px; padding: 16px; font-weight: 600; font-size: 17px; text-align: left; display: flex; gap: 10px; align-items: center; }
+.opt kbd { font: 700 12px system-ui; background: var(--surface-2); border-radius: 6px; padding: 2px 7px; color: var(--muted); }
+.opt:hover:not(:disabled) { border-color: var(--accent); }
+.opt.good { border-color: var(--good); background: var(--good-soft); }
+.opt.bad { border-color: var(--bad); background: var(--bad-soft); animation: shake .35s; }
+@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.feedback { margin-top: 18px; padding: 14px 18px; border-radius: 14px; display: flex; align-items: center; gap: 12px; justify-content: space-between; flex-wrap: wrap; }
+.feedback.good { background: var(--good-soft); color: var(--good); }
+.feedback.bad { background: var(--bad-soft); color: var(--bad); }
+.feedback .fb-text { font-weight: 700; }
+.feedback .fb-text small { display: block; font-weight: 500; color: var(--text); opacity: .8; }
+
+.flash { perspective: 1200px; height: 260px; cursor: pointer; margin-bottom: 18px; }
+.flash-inner { position: relative; width: 100%; height: 100%; transition: transform .55s; transform-style: preserve-3d; }
+.flash.flipped .flash-inner { transform: rotateY(180deg); }
+.face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: var(--radius); display: grid; place-items: center; text-align: center; padding: 20px; border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow); }
+.face.back { transform: rotateY(180deg); background: var(--accent-soft); }
+.row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+.slots { min-height: 60px; border-bottom: 2px dashed var(--border); display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; margin-bottom: 16px; justify-content: center; }
+.bank { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.chip { background: var(--surface); border: 2px solid var(--border); border-bottom-width: 4px; border-radius: 12px; padding: 8px 14px; font-weight: 600; }
+.chip:hover { border-color: var(--accent); }
+.type-in { display: flex; gap: 10px; }
+.mic { width: 96px; height: 96px; border-radius: 50%; border: 0; background: var(--accent); color: #fff; font-size: 40px; box-shadow: 0 0 0 0 var(--accent); }
+.mic.live { animation: pulse 1.2s infinite; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(91,76,240,.5); } 100% { box-shadow: 0 0 0 24px rgba(91,76,240,0); } }
+
+.result { text-align: center; }
+.result .big { font-size: 64px; }
+
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(120px); background: var(--text); color: var(--bg); padding: 12px 18px; border-radius: 14px; font-weight: 700; transition: transform .35s; z-index: 50; max-width: calc(100% - 32px); }
+.toast.show { transform: translateX(-50%) translateY(0); }
+canvas#confetti { position: fixed; inset: 0; pointer-events: none; z-index: 40; }
+footer { text-align: center; color: var(--muted); font-size: 13px; padding: 30px 0 10px; }
+
+@media (max-width: 600px) {
+  .hero { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .options { grid-template-columns: 1fr; }
+  .lvl-progress { grid-template-columns: repeat(3, 1fr); }
+  .card { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<div class="wrap">
+  <header class="top">
+    <div class="logo"><span>🦉</span> English Quest</div>
+    <div class="spacer"></div>
+    <div class="pill hidden" id="pillStreak" title="Série dní">🔥 <span>0</span></div>
+    <div class="pill hidden" id="pillXp" title="Zkušenosti">⭐ <span>0</span></div>
+    <button class="icon-btn" id="themeBtn" title="Přepnout motiv" aria-label="Přepnout motiv">🌓</button>
+  </header>
+
+  <!-- ONBOARDING -->
+  <section id="scrOnboard" class="card hidden">
+    <h1>Vítej v English Quest! 👋</h1>
+    <p class="muted">Nauč se anglická slovíčka a věty hravou formou. Nejdřív nám řekni, jak se jmenuješ a jak jsi na tom s angličtinou.</p>
+    <label for="nameIn"><b>Jak ti máme říkat?</b></label>
+    <input type="text" id="nameIn" placeholder="Tvoje jméno" maxlength="24" style="margin-top:6px">
+    <p style="margin:20px 0 0"><b>Zvol svou pokročilost</b> <span class="muted">(podle Evropského referenčního rámce)</span></p>
+    <div class="levels" id="levelPick"></div>
+    <div class="row" style="justify-content:flex-start">
+      <button class="btn" id="startBtn">Začít se učit 🚀</button>
+      <button class="btn ghost" id="placeBtn">Nevím – udělej mi rozřazovací test 🧭</button>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="scrHome" class="hidden">
+    <div class="card hero">
+      <div>
+        <h1 id="greet">Ahoj!</h1>
+        <p class="muted" id="greetSub" style="margin:0"></p>
+        <div style="margin-top:14px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+          <span class="muted">Úroveň:</span>
+          <select id="levelSel" class="pill" style="font:inherit; font-weight:700"></select>
+          <span class="pill">🏅 Hráčský level <span id="plvl">1</span></span>
+        </div>
+        <div class="xpbar"><i id="xpFill" style="width:0"></i></div>
+        <small class="muted" id="xpTxt"></small>
+      </div>
+      <div class="ring" title="Denní cíl">
+        <svg width="110" height="110"><circle cx="55" cy="55" r="46" stroke="var(--surface-2)" stroke-width="12" fill="none"/><circle id="ringFg" cx="55" cy="55" r="46" stroke="var(--good)" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289" style="transition:stroke-dashoffset .8s"/></svg>
+        <div class="lbl"><div><span id="ringTxt">0/50</span><small>denní cíl XP</small></div></div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b id="stStreak">0</b><small>🔥 dní v řadě</small></div>
+      <div class="stat"><b id="stMastered">0</b><small>🧠 zvládnutých slov</small></div>
+      <div class="stat"><b id="stAcc">–</b><small>🎯 úspěšnost</small></div>
+      <div class="stat"><b id="stLessons">0</b><small>📚 lekcí</small></div>
+    </div>
+
+    <div class="section-title"><h2>Vyber si trénink</h2><small class="muted">Klávesy 1–4, Enter, mezerník</small></div>
+    <div class="modes" id="modes"></div>
+
+    <div class="section-title"><h2>Tvůj pokrok v úrovních</h2></div>
+    <div class="lvl-progress" id="lvlProg"></div>
+
+    <div class="section-title"><h2>Odznaky</h2></div>
+    <div class="badges" id="badges"></div>
+
+    <div class="row" style="margin-top:28px">
+      <button class="btn ghost" id="resetBtn">Začít znovu (smazat pokrok)</button>
+    </div>
+  </section>
+
+  <!-- LESSON -->
+  <section id="scrLesson" class="hidden">
+    <div class="lesson-top">
+      <button class="icon-btn" id="quitBtn" title="Ukončit lekci" aria-label="Ukončit lekci">✕</button>
+      <div class="progress"><i id="lessonBar" style="width:0"></i></div>
+      <div class="combo" id="combo"></div>
+    </div>
+    <div class="card" id="stage"></div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="scrResult" class="card result hidden"></section>
+
+  <footer>English Quest · vytvořeno s ❤️ a Claude Code · pokrok se ukládá jen v tomto prohlížeči</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== DATA ===================== */
+const LEVELS = {
+  A1: { name: "Začátečník", desc: "Úplné základy" },
+  A2: { name: "Mírně pokročilý", desc: "Běžné situace" },
+  B1: { name: "Středně pokročilý", desc: "Samostatný uživatel" },
+  B2: { name: "Pokročilý", desc: "Plynulá konverzace" },
+  C1: { name: "Velmi pokročilý", desc: "Odborný jazyk" },
+  C2: { name: "Expert", desc: "Úroveň rodilého mluvčího" }
+};
+const LEVEL_KEYS = Object.keys(LEVELS);
+
+// [anglicky, česky, příkladová věta]
+const VOCAB = {
+  A1: [
+    ["apple","jablko","I eat an apple every day."],["house","dům","Our house is small."],["dog","pes","The dog is sleeping."],
+    ["water","voda","Can I have some water?"],["book","kniha","This book is interesting."],["friend","kamarád","She is my best friend."],
+    ["school","škola","I go to school by bus."],["family","rodina","My family is very big."],["red","červený","I like the red car."],
+    ["happy","šťastný","Today I am happy."],["eat","jíst","We eat dinner at six."],["sleep","spát","Cats sleep a lot."],
+    ["morning","ráno","I drink coffee in the morning."],["big","velký","That is a big dog."],["cold","studený","The water is cold."]
+  ],
+  A2: [
+    ["weather","počasí","The weather is nice today."],["cheap","levný","This shirt is very cheap."],["borrow","půjčit si","Can I borrow your pen?"],
+    ["journey","cesta","The journey took three hours."],["kitchen","kuchyně","Mum is cooking in the kitchen."],["neighbour","soused","Our neighbour has a cat."],
+    ["tired","unavený","I am tired after work."],["invite","pozvat","I want to invite you to my party."],["healthy","zdravý","Vegetables are healthy."],
+    ["often","často","I often play football."],["ticket","jízdenka","I bought a ticket to London."],["remember","pamatovat si","I can't remember his name."],
+    ["quiet","tichý","The library is very quiet."],["arrive","přijet","The train will arrive at noon."],["dangerous","nebezpečný","Swimming here is dangerous."]
+  ],
+  B1: [
+    ["achieve","dosáhnout","She worked hard to achieve her goals."],["advice","rada","Can you give me some advice?"],["environment","životní prostředí","We must protect the environment."],
+    ["opinion","názor","In my opinion it is a good idea."],["improve","zlepšit","I want to improve my English."],["reliable","spolehlivý","He is a reliable friend."],
+    ["suggest","navrhnout","I suggest we leave early."],["behaviour","chování","His behaviour was very strange."],["complain","stěžovat si","Customers often complain about prices."],
+    ["afford","dovolit si (finančně)","I can't afford a new car."],["challenge","výzva","Learning a language is a challenge."],["deadline","termín odevzdání","The deadline is on Friday."],
+    ["ashamed","zahanbený","He felt ashamed of his mistake."],["convince","přesvědčit","She convinced me to come."],["ordinary","obyčejný","It was an ordinary day."]
+  ],
+  B2: [
+    ["reluctant","neochotný","He was reluctant to help us."],["outcome","výsledek","Nobody could predict the outcome."],["thorough","důkladný","The police did a thorough search."],
+    ["overcome","překonat","She overcame her fear of flying."],["widespread","rozšířený","The problem is widespread."],["consequence","důsledek","Every action has a consequence."],
+    ["negotiate","vyjednávat","They negotiated a better salary."],["feasible","proveditelný","The plan is not feasible."],["acknowledge","uznat","He acknowledged his mistake."],
+    ["bias","předpojatost","The article shows a clear bias."],["emerge","vynořit se","New problems emerged last year."],["inevitable","nevyhnutelný","Change is inevitable."],
+    ["sustainable","udržitelný","We need sustainable energy."],["deny","popřít","He denied stealing the money."],["insight","vhled","The book gives insight into history."]
+  ],
+  C1: [
+    ["ambiguous","nejednoznačný","The ending of the film is ambiguous."],["scrutiny","důkladné zkoumání","The plan came under scrutiny."],["meticulous","pečlivý do detailu","She is meticulous about details."],
+    ["undermine","podkopat","Lies undermine trust."],["prevalent","převládající","This view is prevalent among experts."],["alleviate","zmírnit","The medicine alleviates pain."],
+    ["compelling","přesvědčivý","He made a compelling argument."],["discrepancy","nesrovnalost","There is a discrepancy in the data."],["endorse","podpořit veřejně","The celebrity endorsed the product."],
+    ["profound","hluboký","It had a profound effect on me."],["resilient","odolný","Children are remarkably resilient."],["tentative","předběžný","We made tentative plans."],
+    ["versatile","všestranný","He is a versatile actor."],["contemplate","uvažovat o","She contemplated moving abroad."],["elusive","nepolapitelný","Success remained elusive."]
+  ],
+  C2: [
+    ["ubiquitous","všudypřítomný","Smartphones are ubiquitous today."],["obfuscate","zatemnit","Politicians often obfuscate the truth."],["quintessential","typický, ukázkový","It is the quintessential English pub."],
+    ["ephemeral","pomíjivý","Fame is ephemeral."],["serendipity","šťastná náhoda","We met by pure serendipity."],["perfunctory","povrchní, mechanický","He gave a perfunctory nod."],
+    ["recalcitrant","vzpurný","The recalcitrant pupil refused to listen."],["magnanimous","velkorysý","She was magnanimous in victory."],["esoteric","pro zasvěcené","The lecture was too esoteric for me."],
+    ["cacophony","kakofonie","A cacophony of horns filled the street."],["laconic","lakonický, strohý","His laconic reply surprised us."],["juxtaposition","postavení vedle sebe","The juxtaposition of old and new is striking."],
+    ["vindicate","ospravedlnit","The results vindicated her decision."],["idiosyncratic","osobitý","He has an idiosyncratic style."],["equivocal","dvojznačný","His answer was equivocal."]
+  ]
+};
+
+const MODES = [
+  { id: "flash",  em: "🃏", name: "Kartičky",      desc: "Otoč kartu a ohodnoť, jestli slovo znáš." },
+  { id: "quiz",   em: "🎯", name: "Kvíz",          desc: "Vyber správný překlad – oběma směry." },
+  { id: "gap",    em: "🧩", name: "Doplň slovo",   desc: "Doplň chybějící slovo do věty." },
+  { id: "listen", em: "🎧", name: "Poslech",       desc: "Poslechni si slovo a napiš ho." },
+  { id: "build",  em: "🧱", name: "Skládání vět",  desc: "Poskládej anglickou větu ve správném pořadí." },
+  { id: "speak",  em: "🎙️", name: "Výslovnost",   desc: "Řekni slovo nahlas, aplikace tě poslouchá." },
+  { id: "mix",    em: "🌀", name: "Mix výzva",     desc: "Náhodný mix všech cvičení, dvojnásobné XP!", tag: "2× XP" }
+];
+
+const BADGES = [
+  { id: "first",   em: "🌱", name: "První krok",       test: s => s.lessons >= 1 },
+  { id: "perfect", em: "💎", name: "Bez chyby",        test: s => s.perfect >= 1 },
+  { id: "xp100",   em: "⭐", name: "100 XP",           test: s => s.xp >= 100 },
+  { id: "xp500",   em: "🌟", name: "500 XP",           test: s => s.xp >= 500 },
+  { id: "streak3", em: "🔥", name: "3 dny v řadě",     test: s => s.streak >= 3 },
+  { id: "master10",em: "🧠", name: "10 zvládnutých slov", test: s => masteredCount() >= 10 },
+  { id: "allmodes",em: "🧭", name: "Vyzkoušej vše",    test: s => MODES.every(m => s.modesTried.includes(m.id)) },
+  { id: "combo10", em: "⚡", name: "Combo 10",         test: s => s.bestCombo >= 10 }
+];
+
+/* ===================== STATE ===================== */
+const STORE_KEY = "englishQuest.v1";
+const today = () => new Date().toISOString().slice(0, 10);
+const defaultState = () => ({
+  name: "", level: null, xp: 0, streak: 0, lastDay: null, daily: { date: today(), xp: 0 }, goal: 50,
+  boxes: {}, correct: 0, total: 0, lessons: 0, perfect: 0, bestCombo: 0, modesTried: [], badges: [], theme: null
+});
+let S = load();
+function load() {
+  try { const raw = localStorage.getItem(STORE_KEY); if (raw) return Object.assign(defaultState(), JSON.parse(raw)); } catch (e) {}
+  return defaultState();
+}
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) {} }
+
+/* ===================== HELPERS ===================== */
+const $ = s => document.querySelector(s);
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const words = lvl => VOCAB[lvl].map(([en, cz, ex]) => ({ id: lvl + ":" + en, en, cz, ex, lvl }));
+const box = w => S.boxes[w.id] || 0;
+const masteredCount = () => Object.values(S.boxes).filter(b => b >= 3).length;
+const playerLevel = xp => Math.floor(Math.sqrt(xp / 40)) + 1;
+const xpFor = lvl => 40 * (lvl - 1) ** 2;
+const norm = s => s.toLowerCase().replace(/[^a-z' ]/g, "").trim();
+function lev(a, b) {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+// Leitnerův systém: slova v nižších přihrádkách mají vyšší šanci
+function pickWords(lvl, n) {
+  const pool = words(lvl).map(w => ({ w, k: Math.random() * (6 - Math.min(box(w), 5)) }));
+  return pool.sort((a, b) => b.k - a.k).slice(0, n).map(p => p.w);
+}
+function distractors(w, n, field) {
+  return shuffle(words(w.lvl).filter(x => x.id !== w.id)).slice(0, n).map(x => x[field]);
+}
+function say(text, rate = 0.9) {
+  if (!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "en-GB"; u.rate = rate;
+  const v = speechSynthesis.getVoices().find(v => /^en[-_](GB|US)/i.test(v.lang));
+  if (v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+const Recog = window.SpeechRecognition || window.webkitSpeechRecognition;
+let toastT;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2600); }
+function beep(ok) {
+  try {
+    const ctx = beep.ctx || (beep.ctx = new (window.AudioContext || window.webkitAudioContext)());
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    const t = ctx.currentTime;
+    o.frequency.setValueAtTime(ok ? 660 : 220, t);
+    if (ok) o.frequency.setValueAtTime(990, t + 0.09);
+    g.gain.setValueAtTime(0.08, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+    o.start(t); o.stop(t + 0.26);
+  } catch (e) {}
+}
+
+/* ===================== THEME ===================== */
+function applyTheme() { if (S.theme) document.documentElement.dataset.theme = S.theme; else delete document.documentElement.dataset.theme; }
+$("#themeBtn").onclick = () => {
+  const dark = S.theme ? S.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  S.theme = dark ? "light" : "dark"; applyTheme(); save();
+};
+
+/* ===================== SCREENS ===================== */
+function show(id) {
+  ["#scrOnboard", "#scrHome", "#scrLesson", "#scrResult"].forEach(s => $(s).classList.toggle("hidden", s !== id));
+  const inApp = id !== "#scrOnboard";
+  $("#pillStreak").classList.toggle("hidden", !inApp);
+  $("#pillXp").classList.toggle("hidden", !inApp);
+  window.scrollTo(0, 0);
+}
+
+let pickedLevel = "A1";
+function renderOnboard() {
+  $("#nameIn").value = S.name || "";
+  $("#levelPick").innerHTML = LEVEL_KEYS.map(k =>
+    `<button class="level-opt ${k === pickedLevel ? "sel" : ""}" data-l="${k}"><b>${k}</b>${LEVELS[k].name}<br><small>${LEVELS[k].desc}</small></button>`).join("");
+  $("#levelPick").querySelectorAll("button").forEach(b => b.onclick = () => { pickedLevel = b.dataset.l; renderOnboard(); });
+  show("#scrOnboard");
+}
+$("#startBtn").onclick = () => {
+  S.name = $("#nameIn").value.trim() || "studente"; S.level = pickedLevel; save(); renderHome();
+};
+$("#placeBtn").onclick = () => { S.name = $("#nameIn").value.trim() || "studente"; startPlacement(); };
+
+function touchStreak() {
+  const d = today();
+  if (S.daily.date !== d) S.daily = { date: d, xp: 0 };
+  if (S.lastDay === d) return;
+  const y = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+  S.streak = S.lastDay === y ? S.streak + 1 : 1;
+  S.lastDay = d;
+}
+
+function renderHome() {
+  if (S.daily.date !== today()) S.daily = { date: today(), xp: 0 };
+  const h = new Date().getHours();
+  const hi = h < 10 ? "Dobré ráno" : h < 18 ? "Ahoj" : "Dobrý večer";
+  $("#greet").textContent = `${hi}, ${S.name}! 👋`;
+  const left = Math.max(0, S.goal - S.daily.xp);
+  $("#greetSub").textContent = left ? `Do dnešního cíle ti chybí ${left} XP. Jdeme na to!` : "Dnešní cíl splněn! 🎉 Každé další XP je bonus.";
+  $("#levelSel").innerHTML = LEVEL_KEYS.map(k => `<option value="${k}" ${k === S.level ? "selected" : ""}>${k} · ${LEVELS[k].name}</option>`).join("");
+  const pl = playerLevel(S.xp), lo = xpFor(pl), hiXp = xpFor(pl + 1);
+  $("#plvl").textContent = pl;
+  $("#xpFill").style.width = ((S.xp - lo) / (hiXp - lo) * 100) + "%";
+  $("#xpTxt").textContent = `${S.xp} XP · do dalšího levelu ${hiXp - S.xp} XP`;
+  const r = Math.min(1, S.daily.xp / S.goal);
+  $("#ringFg").style.strokeDashoffset = 289 * (1 - r);
+  $("#ringTxt").textContent = `${Math.min(S.daily.xp, S.goal)}/${S.goal}`;
+  $("#stStreak").textContent = S.streak;
+  $("#stMastered").textContent = masteredCount();
+  $("#stAcc").textContent = S.total ? Math.round(S.correct / S.total * 100) + " %" : "–";
+  $("#stLessons").textContent = S.lessons;
+  $("#pillStreak span").textContent = S.streak;
+  $("#pillXp span").textContent = S.xp;
+
+  $("#modes").innerHTML = MODES.map(m => {
+    const off = m.id === "speak" && !Recog;
+    return `<button class="mode" data-m="${m.id}" ${off ? 'title="Tento prohlížeč nepodporuje rozpoznávání řeči (zkus Chrome nebo Edge)"' : ""}>
+      ${m.tag ? `<span class="tag">${m.tag}</span>` : ""}${off ? '<span class="tag">nepodporováno</span>' : ""}
+      <div class="em">${m.em}</div><b>${m.name}</b><small>${m.desc}</small></button>`;
+  }).join("");
+  $("#modes").querySelectorAll(".mode").forEach(b => b.onclick = () => {
+    if (b.dataset.m === "speak" && !Recog) return toast("Rozpoznávání řeči funguje v Chrome nebo Edge 🎙️");
+    startLesson(b.dataset.m);
+  });
+
+  $("#lvlProg").innerHTML = LEVEL_KEYS.map(k => {
+    const ws = words(k), m = ws.filter(w => box(w) >= 3).length;
+    return `<div class="${k === S.level ? "cur" : ""}"><b>${k}</b>${m}/${ws.length}<div class="mini"><i style="width:${m / ws.length * 100}%"></i></div></div>`;
+  }).join("");
+  $("#badges").innerHTML = BADGES.map(b => `<div class="badge ${S.badges.includes(b.id) ? "on" : ""}">${b.em} ${b.name}</div>`).join("");
+  show("#scrHome");
+}
+$("#levelSel").onchange = e => { S.level = e.target.value; save(); renderHome(); toast(`Úroveň změněna na ${S.level} ✨`); };
+$("#resetBtn").onclick = () => {
+  if (!confirm("Opravdu smazat veškerý pokrok?")) return;
+  const theme = S.theme; S = defaultState(); S.theme = theme; save(); renderOnboard();
+};
+
+/* ===================== LESSON ENGINE ===================== */
+let L = null;
+const LESSON_LEN = 10;
+
+function startLesson(mode) {
+  const qs = pickWords(S.level, LESSON_LEN);
+  const avail = ["quiz", "gap", "listen", "build", "flash"].concat(Recog ? ["speak"] : []);
+  L = {
+    mode, items: qs.map(w => ({ w, type: mode === "mix" ? avail[Math.floor(Math.random() * avail.length)] : mode })),
+    i: 0, correct: 0, combo: 0, bestCombo: 0, xp: 0, mult: mode === "mix" ? 2 : 1, mistakes: [], answered: false
+  };
+  if (!S.modesTried.includes(mode)) S.modesTried.push(mode);
+  show("#scrLesson");
+  next();
+}
+
+function next() {
+  if (L.i >= L.items.length) return finish();
+  L.answered = false;
+  $("#lessonBar").style.width = (L.i / L.items.length * 100) + "%";
+  $("#combo").textContent = L.combo >= 2 ? `⚡${L.combo}` : "";
+  const { w, type } = L.items[L.i];
+  RENDER[type](w, $("#stage"));
+}
+
+function answer(ok, w, correctText) {
+  if (L.answered) return;
+  L.answered = true;
+  S.total++;
+  if (ok) {
+    S.correct++; L.correct++; L.combo++;
+    L.bestCombo = Math.max(L.bestCombo, L.combo);
+    const gain = (10 + Math.min(L.combo - 1, 5) * 2) * L.mult;
+    L.xp += gain;
+    S.boxes[w.id] = Math.min(box(w) + 1, 5);
+  } else {
+    L.combo = 0;
+    L.mistakes.push(w);
+    S.boxes[w.id] = Math.max(0, box(w) - 2);
+  }
+  beep(ok);
+  const praise = ["Výborně!", "Skvěle!", "Paráda!", "Přesně tak!", "Super!", "Bravo!"];
+  const fb = document.createElement("div");
+  fb.className = "feedback " + (ok ? "good" : "bad");
+  fb.innerHTML = `<div class="fb-text">${ok ? "✅ " + praise[Math.floor(Math.random() * praise.length)] : "❌ Tentokrát ne"}
+    <small>${esc(w.en)} = ${esc(w.cz)}${correctText ? " · " + esc(correctText) : ""}</small></div>
+    <button class="btn" id="nextBtn">Pokračovat ↵</button>`;
+  $("#stage").appendChild(fb);
+  $("#nextBtn").onclick = () => { L.i++; next(); };
+  $("#nextBtn").focus();
+  $("#combo").textContent = L.combo >= 2 ? `⚡${L.combo}` : "";
+}
+
+function finish() {
+  touchStreak();
+  const pct = Math.round(L.correct / L.items.length * 100);
+  const perfect = L.correct === L.items.length;
+  if (perfect) L.xp += 20 * L.mult;
+  S.xp += L.xp; S.daily.xp += L.xp; S.lessons++;
+  if (perfect) S.perfect++;
+  S.bestCombo = Math.max(S.bestCombo, L.bestCombo);
+  const newBadges = BADGES.filter(b => !S.badges.includes(b.id) && b.test(S));
+  newBadges.forEach(b => S.badges.push(b.id));
+  save();
+  const msg = pct === 100 ? ["🏆", "Perfektní lekce!"] : pct >= 70 ? ["🎉", "Výborná práce!"] : pct >= 40 ? ["💪", "Dobrý začátek!"] : ["🌱", "Cvičení dělá mistra!"];
+  $("#scrResult").innerHTML = `
+    <div class="big">${msg[0]}</div><h1>${msg[1]}</h1>
+    <p class="muted">Správně ${L.correct} z ${L.items.length} (${pct} %) · nejlepší combo ⚡${L.bestCombo}</p>
+    <div class="stats" style="max-width:520px;margin:16px auto">
+      <div class="stat"><b>+${L.xp}</b><small>XP${perfect ? " (vč. bonusu)" : ""}</small></div>
+      <div class="stat"><b>${S.streak}</b><small>🔥 dní v řadě</small></div>
+      <div class="stat"><b>${masteredCount()}</b><small>🧠 zvládnuto</small></div>
+      <div class="stat"><b>${playerLevel(S.xp)}</b><small>🏅 level</small></div>
+    </div>
+    ${newBadges.length ? `<p><b>Nové odznaky:</b> ${newBadges.map(b => b.em + " " + b.name).join(", ")}</p>` : ""}
+    ${L.mistakes.length ? `<p class="muted">Zopakuj si: ${[...new Set(L.mistakes.map(w => `<b>${esc(w.en)}</b> (${esc(w.cz)})`))].join(", ")}</p>` : ""}
+    <div class="row" style="margin-top:18px">
+      <button class="btn" id="againBtn">Další lekce</button>
+      <button class="btn ghost" id="homeBtn">Domů</button>
+    </div>`;
+  show("#scrResult");
+  $("#againBtn").onclick = () => startLesson(L.mode);
+  $("#homeBtn").onclick = renderHome;
+  if (pct >= 70) confetti();
+  if (S.daily.xp >= S.goal && S.daily.xp - L.xp < S.goal) setTimeout(() => toast("🎯 Denní cíl splněn!"), 600);
+}
+$("#quitBtn").onclick = () => { if (confirm("Ukončit lekci? Pokrok v této lekci se neuloží.")) renderHome(); };
+
+/* ===================== EXERCISE RENDERERS ===================== */
+const speakBtn = text => `<button class="speak" data-say="${esc(text)}">🔊 Přehrát</button>`;
+function bindSpeak(root) { root.querySelectorAll("[data-say]").forEach(b => b.onclick = e => { e.stopPropagation(); say(b.dataset.say); }); }
+
+function choice(root, opts, correct, w, extra) {
+  const box = document.createElement("div");
+  box.className = "options";
+  box.innerHTML = opts.map((o, i) => `<button class="opt" data-v="${esc(o)}"><kbd>${i + 1}</kbd>${esc(o)}</button>`).join("");
+  root.appendChild(box);
+  box.querySelectorAll(".opt").forEach(b => b.onclick = () => {
+    if (L.answered) return;
+    const ok = b.dataset.v === correct;
+    b.classList.add(ok ? "good" : "bad");
+    box.querySelectorAll(".opt").forEach(x => { x.disabled = true; if (x.dataset.v === correct) x.classList.add("good"); });
+    answer(ok, w, extra);
+  });
+}
+
+const RENDER = {
+  quiz(w, root) {
+    const toCz = Math.random() < 0.5;
+    root.innerHTML = `<div class="prompt"><div class="kind">${toCz ? "Přelož do češtiny" : "Přelož do angličtiny"}</div>
+      <div class="word">${esc(toCz ? w.en : w.cz)}</div>${toCz ? speakBtn(w.en) : ""}</div>`;
+    bindSpeak(root);
+    if (toCz) say(w.en);
+    const correct = toCz ? w.cz : w.en;
+    choice(root, shuffle([correct, ...distractors(w, 3, toCz ? "cz" : "en")]), correct, w);
+  },
+  gap(w, root) {
+    const re = new RegExp("\\b" + w.en.slice(0, Math.max(3, w.en.length - 2)) + "\\w*", "i");
+    const m = w.ex.match(re);
+    const shown = m ? w.ex.replace(m[0], "_____") : w.ex + " (_____)";
+    root.innerHTML = `<div class="prompt"><div class="kind">Doplň chybějící slovo</div>
+      <div class="sentence">${esc(shown)}</div><div class="muted">nápověda: ${esc(w.cz)}</div></div>`;
+    choice(root, shuffle([w.en, ...distractors(w, 3, "en")]), w.en, w, w.ex);
+  },
+  listen(w, root) {
+    root.innerHTML = `<div class="prompt"><div class="kind">Poslechni si a napiš anglické slovo</div>
+      <div class="word">🎧</div><div class="row">${speakBtn(w.en)}<button class="speak" id="slowBtn">🐢 Pomalu</button><button class="speak" id="hintBtn">💡 Nápověda</button></div>
+      <p class="muted" id="hint"></p></div>
+      <div class="type-in"><input type="text" id="typeIn" placeholder="Napiš, co slyšíš…" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn" id="checkBtn">Ověřit</button></div>`;
+    bindSpeak(root);
+    $("#slowBtn").onclick = () => say(w.en, 0.55);
+    $("#hintBtn").onclick = () => $("#hint").textContent = `${w.cz} · začíná na „${w.en[0]}“ · ${w.en.length} písmen`;
+    setTimeout(() => say(w.en), 250);
+    const inp = $("#typeIn"); inp.focus();
+    const check = () => {
+      if (L.answered || !inp.value.trim()) return;
+      const d = lev(norm(inp.value), w.en.toLowerCase());
+      inp.disabled = true; $("#checkBtn").disabled = true;
+      answer(d <= (w.en.length > 6 ? 1 : 0), w, d === 1 && w.en.length > 6 ? "drobný překlep, ale počítáme to 😉" : "");
+    };
+    $("#checkBtn").onclick = check;
+    inp.onkeydown = e => { if (e.key === "Enter") { e.stopPropagation(); check(); } };
+  },
+  build(w, root) {
+    const target = w.ex.replace(/[.?!]$/, "").split(" ");
+    const end = w.ex.match(/[.?!]$/)?.[0] || "";
+    let placed = [];
+    const bank = shuffle(target.map((t, i) => ({ t, i })));
+    root.innerHTML = `<div class="prompt"><div class="kind">Poskládej větu</div>
+      <div class="muted">obsahuje slovo <b>${esc(w.en)}</b> (${esc(w.cz)})</div></div>
+      <div class="slots" id="slots"></div><div class="bank" id="bank"></div>
+      <div class="row" style="margin-top:18px"><button class="btn ghost" id="clearBtn">Vymazat</button><button class="btn" id="checkBtn" disabled>Ověřit</button></div>`;
+    const draw = () => {
+      $("#slots").innerHTML = placed.map((p, k) => `<button class="chip" data-k="${k}">${esc(p.t)}</button>`).join("") || '<span class="muted">klikej na slova níže…</span>';
+      $("#bank").innerHTML = bank.filter(b => !placed.includes(b)).map(b => `<button class="chip" data-i="${b.i}">${esc(b.t)}</button>`).join("");
+      $("#slots").querySelectorAll(".chip").forEach(c => c.onclick = () => { if (!L.answered) { placed.splice(+c.dataset.k, 1); draw(); } });
+      $("#bank").querySelectorAll(".chip").forEach(c => c.onclick = () => { if (!L.answered) { placed.push(bank.find(b => b.i === +c.dataset.i)); draw(); } });
+      $("#checkBtn").disabled = placed.length !== target.length || L.answered;
+    };
+    draw();
+    $("#clearBtn").onclick = () => { if (!L.answered) { placed = []; draw(); } };
+    $("#checkBtn").onclick = () => {
+      const ok = placed.map(p => p.t).join(" ") === target.join(" ");
+      $("#checkBtn").disabled = true;
+      say(w.ex);
+      answer(ok, w, ok ? "" : "správně: " + target.join(" ") + end);
+    };
+  },
+  flash(w, root) {
+    root.innerHTML = `<div class="flash" id="fc"><div class="flash-inner">
+        <div class="face"><div><div class="kind muted">ANGLICKY</div><div class="word">${esc(w.en)}</div>${speakBtn(w.en)}<p class="muted">klikni nebo stiskni mezerník pro otočení</p></div></div>
+        <div class="face back"><div><div class="kind muted">ČESKY</div><div class="word">${esc(w.cz)}</div><p><i>${esc(w.ex)}</i></p></div></div>
+      </div></div>
+      <div class="row" id="rate" style="visibility:hidden"><button class="btn ghost" id="noBtn">😕 Ještě neumím (1)</button><button class="btn" id="yesBtn">😎 Umím (2)</button></div>`;
+    bindSpeak(root);
+    say(w.en);
+    const flip = () => { $("#fc").classList.toggle("flipped"); $("#rate").style.visibility = "visible"; };
+    $("#fc").onclick = flip;
+    L.flip = flip;
+    $("#noBtn").onclick = () => { $("#rate").remove(); answer(false, w); };
+    $("#yesBtn").onclick = () => { $("#rate").remove(); answer(true, w); };
+  },
+  speak(w, root) {
+    root.innerHTML = `<div class="prompt"><div class="kind">Řekni nahlas anglicky</div>
+      <div class="word">${esc(w.en)}</div><div class="muted">${esc(w.cz)}</div><div style="margin-top:8px">${speakBtn(w.en)}</div></div>
+      <div class="row"><button class="mic" id="micBtn" aria-label="Nahrávat">🎙️</button></div>
+      <p class="muted" style="text-align:center" id="heard">Klikni na mikrofon a řekni slovo</p>
+      <div class="row"><button class="btn ghost" id="skipBtn">Teď nemůžu mluvit</button></div>`;
+    bindSpeak(root);
+    let tries = 0;
+    $("#skipBtn").onclick = () => { L.items.splice(L.i, 1, { w, type: "quiz" }); next(); };
+    $("#micBtn").onclick = () => {
+      if (L.answered) return;
+      const r = new Recog();
+      r.lang = "en-US"; r.maxAlternatives = 5; r.interimResults = false;
+      $("#micBtn").classList.add("live"); $("#heard").textContent = "Poslouchám…";
+      r.onresult = e => {
+        const alts = Array.from(e.results[0]).map(a => norm(a.transcript));
+        const ok = alts.some(a => a === w.en || a.split(" ").includes(w.en) || lev(a, w.en) <= 1);
+        $("#heard").textContent = `Slyšel jsem: „${alts[0]}“`;
+        tries++;
+        if (ok || tries >= 3) answer(ok, w, ok ? "" : "zkus si to přehrát a zopakovat");
+        else $("#heard").textContent += ` – zkus to znovu (${3 - tries}×)`;
+      };
+      r.onerror = () => { $("#heard").textContent = "Mikrofon nefunguje nebo nebyl povolen. Zkus to znovu, nebo přeskoč."; };
+      r.onend = () => $("#micBtn")?.classList.remove("live");
+      r.start();
+    };
+  }
+};
+
+/* ===================== PLACEMENT TEST ===================== */
+function startPlacement() {
+  const items = LEVEL_KEYS.flatMap(k => shuffle(words(k)).slice(0, 2));
+  let i = 0, score = {};
+  show("#scrLesson");
+  L = { answered: false, items, i: 0 };
+  const step = () => {
+    $("#lessonBar").style.width = (i / items.length * 100) + "%";
+    $("#combo").textContent = "🧭";
+    if (i >= items.length) {
+      let lvl = "A1";
+      for (const k of LEVEL_KEYS) { if ((score[k] || 0) >= 1) lvl = k; else break; }
+      S.level = lvl; save();
+      $("#scrResult").innerHTML = `<div class="big">🧭</div><h1>Tvoje doporučená úroveň: ${lvl}</h1>
+        <p class="muted">${LEVELS[lvl].name} – ${LEVELS[lvl].desc}. Úroveň můžeš kdykoli změnit na hlavní stránce.</p>
+        <div class="row"><button class="btn" id="goBtn">Jdeme na to! 🚀</button></div>`;
+      show("#scrResult");
+      $("#goBtn").onclick = renderHome;
+      confetti();
+      return;
+    }
+    const w = items[i];
+    L.answered = false;
+    $("#stage").innerHTML = `<div class="prompt"><div class="kind">Rozřazovací test · otázka ${i + 1}/${items.length}</div>
+      <div class="word">${esc(w.en)}</div><div class="muted">Co toto slovo znamená?</div></div>`;
+    const opts = shuffle([w.cz, ...distractors(w, 2, "cz"), "Nevím 🤷"]);
+    const boxEl = document.createElement("div"); boxEl.className = "options";
+    boxEl.innerHTML = opts.map((o, j) => `<button class="opt" data-v="${esc(o)}"><kbd>${j + 1}</kbd>${esc(o)}</button>`).join("");
+    $("#stage").appendChild(boxEl);
+    boxEl.querySelectorAll(".opt").forEach(b => b.onclick = () => {
+      if (L.answered) return; L.answered = true;
+      if (b.dataset.v === w.cz) score[w.lvl] = (score[w.lvl] || 0) + 1;
+      i++; step();
+    });
+  };
+  step();
+}
+
+/* ===================== KEYBOARD ===================== */
+document.addEventListener("keydown", e => {
+  if ($("#scrLesson").classList.contains("hidden")) return;
+  if (e.target.tagName === "INPUT") return;
+  if (e.key === "Enter" && $("#nextBtn")) { e.preventDefault(); $("#nextBtn").click(); return; }
+  if (e.key === " " && $("#fc")) { e.preventDefault(); L.flip(); return; }
+  if (/^[1-4]$/.test(e.key)) {
+    if ($("#fc") && $("#rate")) { (e.key === "1" ? $("#noBtn") : e.key === "2" ? $("#yesBtn") : null)?.click(); return; }
+    $("#stage").querySelectorAll(".opt")[+e.key - 1]?.click();
+  }
+});
+
+/* ===================== CONFETTI ===================== */
+function confetti() {
+  const c = $("#confetti"), x = c.getContext("2d");
+  c.width = innerWidth; c.height = innerHeight;
+  const colors = ["#5b4cf0", "#c36cf5", "#1f9d55", "#e8a317", "#ff6b6b", "#3cb4ff"];
+  const ps = Array.from({ length: 160 }, () => ({
+    x: c.width / 2, y: c.height / 3, vx: (Math.random() - .5) * 16, vy: Math.random() * -14 - 4,
+    s: Math.random() * 8 + 4, r: Math.random() * 6, vr: (Math.random() - .5) * .3, c: colors[Math.floor(Math.random() * colors.length)]
+  }));
+  let f = 0;
+  (function tick() {
+    x.clearRect(0, 0, c.width, c.height);
+    ps.forEach(p => { p.vy += .4; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      x.save(); x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.c; x.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); x.restore(); });
+    if (++f < 150) requestAnimationFrame(tick); else x.clearRect(0, 0, c.width, c.height);
+  })();
+}
+
+/* ===================== INIT ===================== */
+applyTheme();
+if ("speechSynthesis" in window) speechSynthesis.onvoiceschanged = () => {};
+if (S.level) renderHome(); else renderOnboard();
+</script>
+</body>
+</html>
